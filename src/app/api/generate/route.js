@@ -2,9 +2,11 @@ import { NextResponse } from "next/server";
 import OpenAI from "openai";
 import { marketingSchema } from "../../../services/marketingSchema";
 
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY! });
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-export async function POST(req: Request) {
+export async function POST(req) {
   try {
     if (!process.env.OPENAI_API_KEY) {
       return NextResponse.json(
@@ -13,7 +15,9 @@ export async function POST(req: Request) {
       );
     }
 
-    const { idea } = await req.json();
+    const body = await req.json().catch(() => ({}));
+    const idea = body?.idea;
+
     if (!idea || typeof idea !== "string") {
       return NextResponse.json({ error: "Idea is required" }, { status: 400 });
     }
@@ -33,21 +37,28 @@ export async function POST(req: Request) {
         type: "json_schema",
         json_schema: {
           name: "marketing_plan",
-          schema: marketingSchema as unknown as { [key: string]: unknown },
+          schema: marketingSchema, // ✅ JS object
           strict: true,
         },
       },
     });
 
-    const content = completion.choices[0]?.message?.content;
-    if (!content)
-      return NextResponse.json({ error: "Empty AI response" }, { status: 500 });
+    const content = completion?.choices?.[0]?.message?.content;
 
-    return NextResponse.json(JSON.parse(content));
-  } catch (err: any) {
+    if (!content) {
+      return NextResponse.json({ error: "Empty AI response" }, { status: 500 });
+    }
+
+    // Just in case model returns whitespace
+    const parsed = JSON.parse(content.trim());
+    return NextResponse.json(parsed);
+  } catch (err) {
     console.error("GPT ERROR:", err);
     return NextResponse.json(
-      { error: "AI generation failed", details: err?.message || String(err) },
+      {
+        error: "AI generation failed",
+        details: err?.message || String(err),
+      },
       { status: 500 }
     );
   }

@@ -1,31 +1,22 @@
-import React from "react";
+"use client";
 
-function cn(...classes) {
-  return classes.filter(Boolean).join(" ");
-}
+const variants = {
+  default:
+    "w-full rounded-xl border border-black/15 px-3 py-2 text-sm outline-none transition focus:border-black/40",
+  dark: "w-full rounded-xl border border-slate-700 bg-[#020617]/50 px-3 py-2 text-sm text-white outline-none transition placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500",
+  // برای input داخل wrapper مثل navbar (بدون padding/radius/border)
+  bare: "w-full bg-transparent border-none outline-none px-0 py-0 rounded-none focus:ring-0",
+};
 
 export default function Input({
   className = "",
-  type = "text",
-  error,
+  variant = "default",
   ...props
 }) {
   return (
-    <div className="w-full">
-      <input
-        type={type}
-        className={cn(
-          "w-full h-12 px-4 rounded-[var(--radius-2xl)]",
-          "bg-card text-foreground placeholder:text-muted/60",
-          "border border-border/55",
-          "transition",
-          "focus:outline-none focus-visible:ring-2 focus-visible:ring-ring/55 focus-visible:border-border/80",
-          error && "border-red-400/70 focus-visible:ring-red-400/40",
-          className
-        )}
-        {...props}
-      />
-      {error ? <p className="mt-2 text-xs text-red-300/90">{error}</p> : null}
-    </div>
+    <input
+      className={`${variants[variant] || variants.default} ${className}`}
+      {...props}
+    />
   );
 }

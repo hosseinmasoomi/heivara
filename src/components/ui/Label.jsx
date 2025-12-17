@@ -1,12 +1,12 @@
-import React from "react";
+"use client";
 
-export default function Label({ className = "", ...props }) {
+export default function Label({ children, className = "", ...props }) {
   return (
     <label
-      className={
-        "block text-sm font-medium text-foreground/90 mb-2 " + className
-      }
+      className={`text-xs font-bold text-slate-400 mr-1 ${className}`}
       {...props}
-    />
+    >
+      {children}
+    </label>
   );
 }
