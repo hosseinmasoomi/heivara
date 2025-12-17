@@ -1,0 +1,40 @@
+@import "tailwindcss";
+
+/* Hiyvara theme (Tailwind v4 - CSS-first) */
+@theme {
+  --color-background: #233032;
+  --color-foreground: #ecf2ef;
+
+  --color-card: #2d3e3f;
+  --color-card-2: #35494b;
+
+  --color-muted: #c8d4ce;
+  --color-border: #596c6c;
+
+  --color-primary: #9fb3aa;
+  --color-primary-foreground: #233032;
+
+  --shadow-soft: 0 20px 60px rgb(0 0 0 / 0.35);
+
+  --radius-xl: 22px;
+  --radius-2xl: 28px;
+  --radius-3xl: 34px;
+}
+
+@layer base {
+  html {
+    scroll-behavior: smooth;
+  }
+  body {
+    @apply bg-background text-foreground antialiased;
+    font-family: "kalamehWeb";
+  }
+}
+
+.rtl {
+  direction: rtl;
+}
+
+.ltr {
+  direction: ltr;
+}
