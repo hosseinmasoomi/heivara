@@ -1,16 +1,13 @@
-"use client";
-
 import React from "react";
+import { BookOpen, Plus, Edit, Trash2 } from "lucide-react";
 import Button from "../../../components/ui/Button";
+
 export default function BlogList({
-  blogPosts,
+  blogPosts = [],
   handleNewPost,
   handleEditPost,
   handleDeletePost,
-  icons,
 }) {
-  const { BookOpen, Plus, Edit, Trash2 } = icons;
-
   return (
     <div className="animate-fade-in bg-[#020617] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
       <div className="p-6 border-b border-slate-800 bg-slate-900/30 flex justify-between items-center">
@@ -76,14 +73,16 @@ export default function BlogList({
 
               <td className="px-6 py-4">
                 <div className="flex gap-2 opacity-0 group-hover:opacity-100 transition-opacity">
-                  <Button
-                    variant="ghost"
-                    onClick={() => handleEditPost(post)}
-                    className="p-2 bg-slate-800 rounded-lg hover:bg-indigo-600 hover:text-white text-slate-400 transition-colors"
-                    title="ویرایش"
-                  >
-                    <Edit size={14} />
-                  </Button>
+                  <Link href={`/admin/blog/${post.id}/edit`}>
+                    <Button
+                      type="button"
+                      variant="ghost"
+                      className="p-2 bg-slate-800 rounded-lg hover:bg-indigo-600 hover:text-white text-slate-400 transition-colors"
+                      title="ویرایش"
+                    >
+                      <Edit size={14} />
+                    </Button>
+                  </Link>
 
                   <Button
                     variant="ghost"

@@ -17,6 +17,7 @@ export default function UserSidebar({
   setActiveMenu,
   onLogout,
   onNewProject,
+  user,
 }) {
   return (
     <aside className="w-72 bg-[#020617] border-l border-slate-800 flex flex-col fixed h-full z-20 hidden lg:flex">
@@ -94,10 +95,10 @@ export default function UserSidebar({
           />
           <div className="flex-1 min-w-0">
             <div className="text-sm font-bold text-white truncate">
-              علی محمدی
+              {user?.name || "کاربر"}
             </div>
             <div className="text-xs text-slate-500 truncate">
-              ali.dev@hivara.ai
+              {user?.email || ""}
             </div>
           </div>
           <button

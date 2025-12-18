@@ -1,5 +1,5 @@
-import AdminView from "../../../views/admin/AdminView";
+import AdminOverviewPage from "@/views/admin/pages/overview/AdminOverviewPage";
 
 export default function Page() {
-  return <AdminView />;
+  return <AdminOverviewPage />;
 }

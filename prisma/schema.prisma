@@ -8,17 +8,18 @@ datasource db {
 }
 
 model User {
-  id                  String   @id @default(cuid())
-  phone               String   @unique
+  id                  String  @id @default(cuid())
+  phone               String  @unique
   name                String?
-  email               String?  @unique
-  role                String   @default("USER")
-  onboardingCompleted Boolean  @default(false)
+  email               String? @unique
+  role                String  @default("USER")
+  onboardingCompleted Boolean @default(false)
 
-  createdAt           DateTime @default(now())
-  updatedAt           DateTime @updatedAt
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
-  sessions            Session[]
+  sessions  Session[]
+  blogPosts BlogPost[] @relation("UserBlogPosts")
 }
 
 model OtpCode {
@@ -33,12 +34,12 @@ model OtpCode {
 }
 
 model OtpRateLimit {
-  id        String   @id @default(cuid())
-  phone     String   @unique
-  windowStart DateTime
-  count     Int      @default(0)
+  id           String    @id @default(cuid())
+  phone        String    @unique
+  windowStart  DateTime
+  count        Int       @default(0)
   blockedUntil DateTime?
-  updatedAt DateTime @updatedAt
+  updatedAt    DateTime  @updatedAt
 }
 
 model Session {
@@ -48,6 +49,48 @@ model Session {
   expiresAt DateTime
   createdAt DateTime @default(now())
 
-  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
   @@index([userId])
+}
+
+enum BlogStatus {
+  DRAFT
+  PUBLISHED
+}
+
+model Category {
+  id        String   @id @default(cuid())
+  name      String   @unique
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  posts BlogPost[]
+}
+
+model BlogPost {
+  id         String     @id @default(cuid())
+  title      String
+  slug       String     @unique
+  summary    String?
+  content    String
+  coverImage String?
+  tags       Json?
+  faq        Json?
+  meta       Json?
+  status     BlogStatus @default(DRAFT)
+
+  categoryId String
+  category   Category @relation(fields: [categoryId], references: [id], onDelete: Restrict)
+  authorId   String?
+  author     User?    @relation("UserBlogPosts", fields: [authorId], references: [id], onDelete: SetNull)
+
+  views       Int       @default(0)
+  publishedAt DateTime?
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+
+  @@index([categoryId])
+  @@index([authorId])
 }

@@ -17,11 +17,16 @@ export function UserProvider({ children }) {
   const refresh = useCallback(async () => {
     setLoading(true);
     try {
-      const res = await fetch("/api/auth/me", { method: "GET" });
+      const res = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include",
+      });
+
       if (res.status === 401) {
         setUser(null);
         return;
       }
+
       const data = await res.json();
       if (data?.ok) setUser(data.user);
       else setUser(null);
@@ -36,7 +41,27 @@ export function UserProvider({ children }) {
     refresh();
   }, [refresh]);
 
-  const value = { user, setUser, loading, refresh };
+  // ✅ LOGOUT استیبل
+  const logout = useCallback(async () => {
+    try {
+      await fetch("/api/auth/logout", {
+        method: "POST",
+        credentials: "include",
+      });
+    } catch (e) {
+      console.error("Logout error:", e);
+    } finally {
+      // پاکسازی کلاینت (حتی اگر سرور جواب نداد)
+      setUser(null);
+      setLoading(false);
+
+      // ریدایرکت امن
+      window.location.href = "/login";
+    }
+  }, []);
+
+  const value = { user, setUser, loading, refresh, logout };
+
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
 }
 

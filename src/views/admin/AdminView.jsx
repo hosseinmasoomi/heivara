@@ -28,10 +28,11 @@ import {
 import AdminSidebar from "./components/AdminSidebar";
 import AdminTopbar from "./components/AdminTopbar";
 import AdminContent from "./components/AdminContent";
+import { useUser } from "@/context/UserContext";
 
 export default function AdminView() {
   const [activeTab, setActiveTab] = useState("overview");
-
+  const { logout } = useUser();
   // Blog State
   const [isEditingBlog, setIsEditingBlog] = useState(false);
   const [currentPost, setCurrentPost] = useState(null);
@@ -266,9 +267,7 @@ export default function AdminView() {
     setCurrentPost(null);
   };
 
-  const onLogout = () => {
-    // TODO logout واقعی
-  };
+  const onLogout = () => logout();
 
   const icons = {
     Users,

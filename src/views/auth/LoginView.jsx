@@ -32,6 +32,16 @@ function normalizeIranPhone(input = "") {
 
   return p;
 }
+
+async function readJsonSafe(res) {
+  const text = await res.text();
+  try {
+    return JSON.parse(text);
+  } catch {
+    return { ok: false, message: text?.slice(0, 400) || "NON_JSON_RESPONSE" };
+  }
+}
+
 function isValidIranMobile(phone) {
   return /^09\d{9}$/.test(phone);
 }
@@ -77,13 +87,14 @@ export default function LoginView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: p }),
       });
-      const data = await res.json();
+      const data = await readJsonSafe(res);
 
       if (!res.ok || !data?.ok) {
-        setError(data?.message || "خطا در ارسال کد.");
+        setError(
+          `(${res.status}) ${data?.message || data?.error || "SERVER_ERROR"}`
+        );
         return;
       }
-
       setInfo("کد تایید ارسال شد.");
       setStep("code");
       setResendLeft(60);
@@ -115,10 +126,12 @@ export default function LoginView() {
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ phone: p, code }),
       });
-      const data = await res.json();
+      const data = await readJsonSafe(res);
 
       if (!res.ok || !data?.ok) {
-        setError(data?.message || "کد اشتباه است.");
+        setError(
+          `(${res.status}) ${data?.message || data?.error || "SERVER_ERROR"}`
+        );
         return;
       }
 

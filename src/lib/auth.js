@@ -1,29 +1,47 @@
 // src/lib/auth.js
 import crypto from "crypto";
-import { cookies, headers } from "next/headers";
+import { cookies } from "next/headers";
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-const SESSION_COOKIE = "hivara_session";
+export const SESSION_COOKIE = "hivara_session";
 
-function createSessionToken() {
+export function createSessionToken() {
   return crypto.randomBytes(32).toString("hex");
 }
 
-function hashToken(raw) {
+export function hashSessionToken(raw) {
   return crypto.createHash("sha256").update(String(raw)).digest("hex");
 }
 
-export function getSessionCookieValue() {
-  const jar = cookies();
+export function sessionCookieOptions(expires) {
+  return {
+    httpOnly: true,
+    sameSite: "lax",
+    secure: process.env.NODE_ENV === "production",
+    path: "/",
+    ...(expires ? { expires } : {}),
+  };
+}
+
+export function clearCookieOptions() {
+  return {
+    ...sessionCookieOptions(),
+    expires: new Date(0),
+    maxAge: 0,
+  };
+}
+
+export async function getSessionCookieValue() {
+  const jar = await cookies();
   return jar.get(SESSION_COOKIE)?.value || null;
 }
 
 export async function getCurrentUser() {
-  const raw = getSessionCookieValue();
+  const raw = await getSessionCookieValue();
   if (!raw) return null;
 
-  const tokenHash = hashToken(raw);
+  const tokenHash = hashSessionToken(raw);
 
   const session = await prisma.session.findUnique({
     where: { tokenHash },
@@ -32,6 +50,7 @@ export async function getCurrentUser() {
 
   if (!session) return null;
 
+  // expire check
   if (session.expiresAt && new Date(session.expiresAt) < new Date()) {
     await prisma.session.delete({ where: { id: session.id } }).catch(() => {});
     return null;
@@ -40,22 +59,11 @@ export async function getCurrentUser() {
   return session.user;
 }
 
-/**
- * ✅ FIX: headers() در Next جدید async است -> باید await شود
- */
 export async function attachSession(res, userId) {
   const raw = createSessionToken();
-  const tokenHash = hashToken(raw);
-  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30);
+  const tokenHash = hashSessionToken(raw);
+  const expiresAt = new Date(Date.now() + 1000 * 60 * 60 * 24 * 30); // 30 days
 
-  // ✅ این خط‌ها علت 500 بودند
-  const h = await headers();
-  const ua = h.get("user-agent") || "";
-  const ip =
-    h.get("x-forwarded-for")?.split(",")[0]?.trim() || h.get("x-real-ip") || "";
-
-  // چون در schema فعلی Session فقط tokenHash/userId/expiresAt دارد،
-  // ua/ip را ذخیره نمی‌کنیم (اگر خواستی فیلد اضافه می‌کنی)
   await prisma.session.create({
     data: {
       tokenHash,
@@ -64,25 +72,7 @@ export async function attachSession(res, userId) {
     },
   });
 
-  res.cookies.set(SESSION_COOKIE, raw, {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    expires: expiresAt,
-  });
-
-  return res;
-}
-
-export function clearSessionCookie(res) {
-  res.cookies.set(SESSION_COOKIE, "", {
-    httpOnly: true,
-    sameSite: "lax",
-    secure: process.env.NODE_ENV === "production",
-    path: "/",
-    expires: new Date(0),
-  });
+  res.cookies.set(SESSION_COOKIE, raw, sessionCookieOptions(expiresAt));
   return res;
 }
 
@@ -100,16 +90,34 @@ export async function createSessionResponse(userId, redirectTo = null) {
   return res;
 }
 
+export function clearSessionCookie(res) {
+  res.cookies.set(SESSION_COOKIE, "", clearCookieOptions());
+  return res;
+}
+
 export async function requireUser() {
-  const user = await getCurrentUser();
-  if (!user) {
+  try {
+    const user = await getCurrentUser();
+
+    if (!user) {
+      return {
+        user: null,
+        errorResponse: NextResponse.json(
+          { ok: false, error: "UNAUTHORIZED" },
+          { status: 401 }
+        ),
+      };
+    }
+
+    return { user, errorResponse: null };
+  } catch (err) {
+    console.error("requireUser/getCurrentUser ERROR:", err);
     return {
       user: null,
       errorResponse: NextResponse.json(
-        { ok: false, error: "UNAUTHORIZED" },
-        { status: 401 }
+        { ok: false, error: "AUTH_INTERNAL_ERROR" },
+        { status: 500 }
       ),
     };
   }
-  return { user, errorResponse: null };
 }

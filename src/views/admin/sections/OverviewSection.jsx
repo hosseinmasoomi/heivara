@@ -5,6 +5,7 @@ import Button from "../../../components/ui/Button";
 
 import AdminStatCard from "../shared/AdminStatCard";
 import StatusBadge from "../shared/StatusBadge";
+import { DollarSign, Users, Briefcase, Calendar, Terminal } from "lucide-react";
 
 export default function OverviewSection({
   setActiveTab,
@@ -12,8 +13,6 @@ export default function OverviewSection({
   serverLogs,
   icons,
 }) {
-  const { DollarSign, Users, Briefcase, Calendar, Terminal } = icons;
-
   return (
     <div className="space-y-8 animate-fade-in">
       {/* Stats */}

@@ -5,7 +5,12 @@ import { Command, Search, Bell, LogOut } from "lucide-react";
 import Button from "../../../components/ui/Button";
 import Input from "../../../components/ui/Input";
 
-export default function UserHeader({ onLogout }) {
+export default function UserHeader({
+  onLogout,
+  userName = "کاربر",
+  planLabel = "FREE",
+  loading,
+}) {
   return (
     <header className="h-20 bg-[#020617]/80 backdrop-blur-md border-b border-slate-800 sticky top-0 z-10 px-6 md:px-8 flex items-center justify-between">
       {/* Mobile Brand */}
@@ -18,9 +23,10 @@ export default function UserHeader({ onLogout }) {
 
       {/* Desktop Welcome */}
       <div className="hidden lg:flex items-center gap-4 text-slate-400 text-sm">
-        <span>خوش آمدید، علی 👋</span>
-        <span className="text-slate-600">|</span>
-        <span className="text-slate-500">طرح حرفه‌ای (Pro) فعال است</span>
+        <span>خوش آمدید، {loading ? "..." : userName} 👋</span>
+        <span className="text-slate-500">
+          طرح {loading ? "..." : planLabel} فعال است
+        </span>
       </div>
 
       {/* Actions */}

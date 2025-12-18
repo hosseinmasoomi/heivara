@@ -1,28 +1,29 @@
+// src/app/api/auth/logout/route.js
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
-import { hashSessionToken } from "../../../../../lib/crypto";
-
-const COOKIE_NAME = "hivara_session";
+import {
+  SESSION_COOKIE,
+  hashSessionToken,
+  clearCookieOptions,
+} from "@/lib/auth";
 
 export async function POST(req) {
   try {
-    const cookie = req.cookies.get(COOKIE_NAME)?.value;
-    if (cookie) {
-      const tokenHash = hashSessionToken(cookie);
+    const raw = req.cookies.get(SESSION_COOKIE)?.value;
+
+    if (raw) {
+      const tokenHash = hashSessionToken(raw);
       await prisma.session.deleteMany({ where: { tokenHash } });
     }
 
     const res = NextResponse.json({ ok: true });
-    res.cookies.set({
-      name: COOKIE_NAME,
-      value: "",
-      httpOnly: true,
-      path: "/",
-      expires: new Date(0),
-    });
+    res.cookies.set(SESSION_COOKIE, "", clearCookieOptions());
     return res;
   } catch (e) {
-    console.error(e);
-    return NextResponse.json({ ok: false }, { status: 500 });
+    // حتی اگه DB مشکل داشت، از نظر UX کوکی رو پاک کن
+    console.error("LOGOUT ERROR:", e);
+    const res = NextResponse.json({ ok: true });
+    res.cookies.set(SESSION_COOKIE, "", clearCookieOptions());
+    return res;
   }
 }

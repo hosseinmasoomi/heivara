@@ -1,7 +1,4 @@
 // src/app/api/auth/onboarding/route.js
-export const runtime = "nodejs";
-export const dynamic = "force-dynamic";
-
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/auth";
@@ -14,7 +11,7 @@ export async function GET() {
     ok: true,
     user: {
       id: user.id,
-      phone: user.phone || null,
+      phone: user.phone,
       name: user.name || "",
       email: user.email || "",
       onboardingCompleted: !!user.onboardingCompleted,
@@ -40,7 +37,6 @@ export async function POST(req) {
     );
   }
 
-  // ایمیل اختیاریه، ولی اگر وارد شد validate ساده
   if (email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
     return NextResponse.json(
       { ok: false, error: "INVALID_EMAIL" },
@@ -48,7 +44,6 @@ export async function POST(req) {
     );
   }
 
-  // email unique هست => اگر ایمیل دادی، چک کن مال یکی دیگه نباشه
   if (email) {
     const exists = await prisma.user.findFirst({
       where: { email, NOT: { id: user.id } },
@@ -67,15 +62,15 @@ export async function POST(req) {
     data: {
       name,
       email: email || null,
-      onboardingCompleted: true, // ✅ این معیار نهایی شماست
+      onboardingCompleted: true,
     },
     select: {
       id: true,
       phone: true,
       name: true,
       email: true,
-      role: true,
       onboardingCompleted: true,
+      role: true,
     },
   });
 
