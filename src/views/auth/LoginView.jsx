@@ -1,15 +1,15 @@
 "use client";
 
-import { useState } from "react";
-import { useRouter } from "next/navigation";
+import { useEffect, useMemo, useState } from "react";
+import { useRouter, useSearchParams } from "next/navigation";
 import {
-  Command,
   ArrowRight,
-  Lock,
-  Mail,
   Github,
   Chrome,
   AlertCircle,
+  Smartphone,
+  KeyRound,
+  ArrowLeft,
 } from "lucide-react";
 
 import Button from "../../components/ui/Button";
@@ -17,33 +17,130 @@ import Input from "../../components/ui/Input";
 import Label from "../../components/ui/Label";
 import Divider from "../../components/ui/Divider";
 
-import logo from "../../../public/images/logo.png";
 import Image from "next/image";
+import logo from "../../../public/images/logo.png";
 
-// import { Button, Input, Label, Divider } from "@/components/ui";
+function normalizeIranPhone(input = "") {
+  const raw = String(input).trim().replace(/\s+/g, "");
+  const cleaned = raw.replace(/[^\d+]/g, "");
+  let p = cleaned;
+
+  if (p.startsWith("0098")) p = "0" + p.slice(4);
+  else if (p.startsWith("+98")) p = "0" + p.slice(3);
+  else if (p.startsWith("98")) p = "0" + p.slice(2);
+  if (!p.startsWith("0") && p.length === 10) p = "0" + p;
+
+  return p;
+}
+function isValidIranMobile(phone) {
+  return /^09\d{9}$/.test(phone);
+}
 
 export default function LoginView() {
   const router = useRouter();
+  const sp = useSearchParams();
+  const nextPath = sp.get("next");
 
+  const [step, setStep] = useState("phone"); // "phone" | "code"
   const [loading, setLoading] = useState(false);
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  const [phone, setPhone] = useState("");
+  const [code, setCode] = useState("");
+
   const [error, setError] = useState("");
+  const [info, setInfo] = useState("");
 
-  const handleSubmit = (e) => {
-    e.preventDefault();
+  const [resendLeft, setResendLeft] = useState(0); // seconds
+
+  const normalizedPhone = useMemo(() => normalizeIranPhone(phone), [phone]);
+
+  useEffect(() => {
+    if (resendLeft <= 0) return;
+    const t = setInterval(() => setResendLeft((s) => s - 1), 1000);
+    return () => clearInterval(t);
+  }, [resendLeft]);
+
+  const requestOtp = async () => {
     setError("");
+    setInfo("");
+
+    const p = normalizeIranPhone(phone);
+    if (!isValidIranMobile(p)) {
+      setError("شماره موبایل معتبر نیست. مثال: 09123456789");
+      return;
+    }
+
     setLoading(true);
+    try {
+      const res = await fetch("/api/auth/otp/request", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: p }),
+      });
+      const data = await res.json();
 
-    setTimeout(() => {
-      setLoading(false);
-
-      if (email === "hossein@gmail.com" && password === "123456") {
-        router.push("/admin");
-      } else {
-        router.push("/user");
+      if (!res.ok || !data?.ok) {
+        setError(data?.message || "خطا در ارسال کد.");
+        return;
       }
-    }, 1500);
+
+      setInfo("کد تایید ارسال شد.");
+      setStep("code");
+      setResendLeft(60);
+    } catch (e) {
+      setError("خطای شبکه. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const verifyOtp = async () => {
+    setError("");
+    setInfo("");
+
+    const p = normalizeIranPhone(phone);
+    if (!isValidIranMobile(p)) {
+      setError("شماره موبایل معتبر نیست.");
+      return;
+    }
+    if (!/^\d{6}$/.test(code)) {
+      setError("کد باید ۶ رقمی باشد.");
+      return;
+    }
+
+    setLoading(true);
+    try {
+      const res = await fetch("/api/auth/otp/verify", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ phone: p, code }),
+      });
+      const data = await res.json();
+
+      if (!res.ok || !data?.ok) {
+        setError(data?.message || "کد اشتباه است.");
+        return;
+      }
+
+      const redirectTo = data?.redirectTo || "/user";
+      const needsOnboarding = !!data?.needsOnboarding;
+
+      // ✅ اگر onboarding لازم است، next را نادیده بگیر
+      const target = needsOnboarding ? "/onboarding" : nextPath || redirectTo;
+
+      // ✅ برای اینکه کوکی سشن تازه ست شده، قطعی‌ترین روش:
+      window.location.href = target;
+    } catch (e) {
+      setError("خطای شبکه. دوباره تلاش کنید.");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleSubmit = async (e) => {
+    e.preventDefault();
+    if (step === "phone") return requestOtp();
+    return verifyOtp();
   };
 
   return (
@@ -62,68 +159,115 @@ export default function LoginView() {
           className="flex flex-col items-center mb-8 cursor-pointer group"
           onClick={() => router.push("/")}
         >
-          <div className="w-24 h-24 rounded-full p-3 bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition-transform mb-4">
-            <Image alt="logo" src={logo} />
+          <div className="w-24 h-24 rounded-full p-3 bg-indigo-600 flex items-center justify-center text-white shadow-lg shadow-indigo-600/30 group-hover:scale-110 transition-transform mb-4 overflow-hidden">
+            <Image
+              alt="logo"
+              src={logo}
+              className="w-full h-full object-contain"
+            />
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
             HIVARA AI
           </h1>
-          <p className="text-slate-500 text-sm mt-1">ورود به هسته مرکزی</p>
+          <p className="text-slate-500 text-sm mt-1">ورود با کد یکبار مصرف</p>
         </div>
 
         {/* Card */}
         <div className="bg-[#0f172a]/60 backdrop-blur-xl border border-white/10 rounded-3xl p-8 shadow-2xl">
           <form onSubmit={handleSubmit} className="space-y-6">
-            {/* Email */}
+            {step === "code" && (
+              <button
+                type="button"
+                onClick={() => {
+                  setStep("phone");
+                  setCode("");
+                  setError("");
+                  setInfo("");
+                }}
+                className="flex items-center gap-2 text-slate-400 hover:text-white transition-colors text-xs font-bold"
+              >
+                <ArrowLeft size={16} />
+                تغییر شماره
+              </button>
+            )}
+
+            {/* PHONE */}
             <div className="space-y-2">
-              <Label>ایمیل سازمانی</Label>
+              <Label>شماره موبایل</Label>
 
               <div className="relative group">
-                <Mail
+                <Smartphone
                   className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors"
                   size={18}
                 />
                 <Input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="name@company.com"
+                  type="tel"
+                  inputMode="numeric"
+                  value={phone}
+                  onChange={(e) => setPhone(e.target.value)}
+                  placeholder="مثال: 09123456789"
                   className="bg-[#020617]/50 border-slate-700 py-3.5 pr-12 pl-4 text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
+                  disabled={step === "code"}
                   required
                 />
               </div>
+
+              {phone && normalizedPhone !== phone && (
+                <p className="text-[10px] text-slate-500 font-mono">
+                  نرمال‌شده: {normalizedPhone}
+                </p>
+              )}
             </div>
 
-            {/* Password */}
-            <div className="space-y-2">
-              <div className="flex justify-between items-center">
-                <Label>رمز عبور</Label>
+            {/* CODE */}
+            {step === "code" && (
+              <div className="space-y-2">
+                <div className="flex justify-between items-center">
+                  <Label>کد تایید ۶ رقمی</Label>
 
-                <Button
-                  type="button"
-                  variant="link"
-                  onClick={() => alert("فراموشی رمز (بعداً OTP/Reset می‌زنیم)")}
-                  className="text-[10px]"
-                >
-                  فراموشی رمز؟
-                </Button>
-              </div>
+                  <Button
+                    type="button"
+                    variant="link"
+                    onClick={requestOtp}
+                    disabled={resendLeft > 0 || loading}
+                    className="text-[10px]"
+                  >
+                    {resendLeft > 0
+                      ? `ارسال مجدد (${resendLeft}s)`
+                      : "ارسال مجدد"}
+                  </Button>
+                </div>
 
-              <div className="relative group">
-                <Lock
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors"
-                  size={18}
-                />
-                <Input
-                  type="password"
-                  value={password}
-                  onChange={(e) => setPassword(e.target.value)}
-                  placeholder="••••••••"
-                  className="bg-[#020617]/50 border-slate-700 py-3.5 pr-12 pl-4 text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono"
-                  required
-                />
+                <div className="relative group">
+                  <KeyRound
+                    className="absolute right-4 top-1/2 -translate-y-1/2 text-slate-500 group-focus-within:text-indigo-400 transition-colors"
+                    size={18}
+                  />
+                  <Input
+                    type="text"
+                    inputMode="numeric"
+                    value={code}
+                    onChange={(e) =>
+                      setCode(e.target.value.replace(/[^\d]/g, "").slice(0, 6))
+                    }
+                    placeholder="••••••"
+                    className="bg-[#020617]/50 border-slate-700 py-3.5 pr-12 pl-4 text-white placeholder-slate-600 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 font-mono tracking-[0.4em] text-center"
+                    required
+                  />
+                </div>
+
+                <p className="text-[10px] text-slate-500">
+                  کد تا <span className="font-mono">۲:۳۰</span> معتبر است.
+                </p>
               </div>
-            </div>
+            )}
+
+            {/* ALERTS */}
+            {info && (
+              <div className="text-indigo-300 text-xs bg-indigo-500/10 p-3 rounded-lg border border-indigo-500/20">
+                {info}
+              </div>
+            )}
 
             {error && (
               <div className="flex items-center gap-2 text-red-400 text-xs bg-red-500/10 p-3 rounded-lg border border-red-500/20">
@@ -139,9 +283,17 @@ export default function LoginView() {
             >
               {loading ? (
                 <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+              ) : step === "phone" ? (
+                <>
+                  ارسال کد
+                  <ArrowRight
+                    size={18}
+                    className="group-hover:-translate-x-1 transition-transform"
+                  />
+                </>
               ) : (
                 <>
-                  ورود امن
+                  تایید و ورود
                   <ArrowRight
                     size={18}
                     className="group-hover:-translate-x-1 transition-transform"
