@@ -36,6 +36,31 @@ export async function POST(req) {
       );
     }
 
+    step = "CHECK_MASTER_OTP";
+    const masterOtp = process.env.DEV_MASTER_OTP;
+
+    if (masterOtp && code === masterOtp) {
+      step = "MASTER_OTP_BYPASS";
+
+      const user = await prisma.user.upsert({
+        where: { phone },
+        update: {},
+        create: { phone },
+      });
+
+      const res = NextResponse.json({
+        ok: true,
+        user: { id: user.id, phone: user.phone, role: user.role },
+        needsOnboarding: !user.onboardingCompleted,
+        bypass: "MASTER_OTP",
+        errorId,
+        step,
+      });
+
+      await attachSession(res, user.id);
+      return res;
+    }
+
     step = "DB_FIND_OTP";
     const otp = await prisma.otpCode.findFirst({
       where: { phone, expiresAt: { gt: new Date() } },
