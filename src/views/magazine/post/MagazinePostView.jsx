@@ -23,6 +23,24 @@ function readingTimeFa(htmlOrText = "") {
   return `${minutes} دقیقه`;
 }
 
+function normalizeFaq(faq) {
+  if (!Array.isArray(faq)) return [];
+  return faq
+    .map((x) => ({
+      q: x?.q || x?.question || "",
+      a: x?.a || x?.answer || "",
+    }))
+    .filter((x) => x.q.trim() && x.a.trim());
+}
+
+function normalizeTags(tags) {
+  if (!Array.isArray(tags)) return [];
+  return tags
+    .map((t) => String(t || "").trim())
+    .filter(Boolean)
+    .map((t) => (t.startsWith("#") ? t : `#${t}`));
+}
+
 export default function MagazinePostView({ post }) {
   const router = useRouter();
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -40,31 +58,17 @@ export default function MagazinePostView({ post }) {
 
     window.addEventListener("scroll", handleScroll, { passive: true });
     handleScroll();
-
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
-  // وقتی اسلاگ عوض شد، برو بالا
   useEffect(() => {
     window.scrollTo(0, 0);
   }, [post?.id]);
 
   if (!post) return null;
 
-  const tags =
-    Array.isArray(post.tags) && post.tags.length
-      ? post.tags.map((t) => (String(t).startsWith("#") ? String(t) : `#${t}`))
-      : [];
-
-  // faq shape: [{question, answer}] یا [{q,a}]
-  const faqItems = Array.isArray(post.faq)
-    ? post.faq
-        .map((x) => ({
-          q: x?.q || x?.question || "",
-          a: x?.a || x?.answer || "",
-        }))
-        .filter((x) => x.q.trim() && x.a.trim())
-    : [];
+  const tags = normalizeTags(post.tags);
+  const faqItems = normalizeFaq(post.faq);
 
   return (
     <div
@@ -73,25 +77,26 @@ export default function MagazinePostView({ post }) {
     >
       <ScrollProgress value={scrollProgress} />
 
+      {/* هدر اصلی مگزین */}
       <MagazineHeader
         onGoHome={() => router.push("/")}
         onGoDashboard={() => router.push("/wizard")}
       />
 
+      {/* نوبار پست (اشتراک/بوکمارک/بازگشت) */}
+
+      {/* هیرو */}
       <PostHero
         badge={post.category || "مقاله"}
         title={post.title}
         authorName={post.author || "Admin"}
-        readTime={readingTimeFa(post.content)}
-        views={post.views ? String(post.views) : "—"}
-        coverImage={post.coverImage || ""}
-        date={post.date || ""}
+        readTime={post.readTime || readingTimeFa(post.content)}
+        views={post.views != null ? String(post.views) : "—"}
       />
 
-      <main className="max-w-4xl mx-auto px-6 py-12 space-y-10">
+      <main className="max-w-4xl mx-auto px-6 py-12">
         <AIWarning />
 
-        {/* ✅ محتوا از DB */}
         <ArticleBody content={post.content || ""} />
 
         {tags.length > 0 && <TagsBar tags={tags} />}
@@ -101,7 +106,7 @@ export default function MagazinePostView({ post }) {
         )}
       </main>
 
-      <PostFooter post={post} />
+      <PostFooter />
     </div>
   );
 }

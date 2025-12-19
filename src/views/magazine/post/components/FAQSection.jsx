@@ -4,6 +4,8 @@ import { MessageSquare } from "lucide-react";
 import AccordionItem from "./AccordionItem";
 
 export default function FAQSection({ subtitle, items = [] }) {
+  if (!items?.length) return null;
+
   return (
     <div className="mt-24">
       <div className="flex items-end justify-between mb-8">

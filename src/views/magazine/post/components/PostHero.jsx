@@ -2,8 +2,33 @@
 
 import { Clock, Eye, Zap } from "lucide-react";
 
+function splitFancyTitle(title = "") {
+  const t = String(title || "").trim();
+  if (!t) return { top: "", highlight: "", bottom: "" };
+
+  // اگر کاربر خودش با | جدا کرد: top|highlight|bottom
+  if (t.includes("|")) {
+    const [top, highlight, bottom] = t.split("|").map((x) => x.trim());
+    return { top: top || "", highlight: highlight || "", bottom: bottom || "" };
+  }
+
+  // حالت پیش‌فرض: وسط جمله رو هایلایت کن
+  const words = t.split(" ").filter(Boolean);
+  if (words.length < 3) return { top: t, highlight: "", bottom: "" };
+
+  const mid = Math.floor(words.length / 2);
+  return {
+    top: words.slice(0, mid - 1).join(" "),
+    highlight: words[mid - 1],
+    bottom: words.slice(mid).join(" "),
+  };
+}
+
 export default function PostHero({
   badge,
+  // حالت جدید
+  title,
+  // حالت قدیمی (اگر هنوز جایی استفاده می‌کنی)
   titleTop,
   titleHighlight,
   titleBottom,
@@ -11,6 +36,15 @@ export default function PostHero({
   readTime,
   views,
 }) {
+  const isLegacy = titleTop || titleHighlight || titleBottom;
+  const t = isLegacy
+    ? {
+        top: titleTop || "",
+        highlight: titleHighlight || "",
+        bottom: titleBottom || "",
+      }
+    : splitFancyTitle(title || "");
+
   return (
     <header className="relative pt-32 pb-20 px-6 border-b border-slate-800 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#020617] to-[#020617]">
       <div className="max-w-4xl mx-auto text-center relative z-10">
@@ -20,14 +54,16 @@ export default function PostHero({
         </div>
 
         <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-8 tracking-tight drop-shadow-2xl">
-          {titleTop}{" "}
-          <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-            {titleHighlight}
-          </span>
-          {titleBottom ? (
+          {t.top}{" "}
+          {t.highlight ? (
+            <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
+              {t.highlight}
+            </span>
+          ) : null}
+          {t.bottom ? (
             <>
               <br />
-              {titleBottom}
+              {t.bottom}
             </>
           ) : null}
         </h1>

@@ -3,17 +3,25 @@
 import { useRouter } from "next/navigation";
 import { ArrowLeft, Share2, Bookmark } from "lucide-react";
 
-export default function PostNavbar({ backHref = "/magazine" }) {
+export default function PostNavbar({
+  backHref = "/magazine",
+  title = "Hivara Magazine",
+  shareText = "مقاله هیوارا",
+}) {
   const router = useRouter();
 
   const handleShare = async () => {
     try {
       if (navigator.share) {
         await navigator.share({
-          title: "Hivara Magazine",
-          text: "مقاله هیوارا",
+          title,
+          text: shareText,
           url: window.location.href,
         });
+      } else {
+        // fallback ساده: کپی لینک
+        await navigator.clipboard?.writeText(window.location.href);
+        alert("لینک کپی شد ✅");
       }
     } catch {
       // ignore
