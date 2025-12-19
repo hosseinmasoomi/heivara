@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { Suspense, useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import {
   ArrowRight,
@@ -46,7 +46,18 @@ function isValidIranMobile(phone) {
   return /^09\d{9}$/.test(phone);
 }
 
+/**
+ * ✅ Wrapper که Suspense می‌ذاره تا Next 16 موقع prerender گیر نده
+ */
 export default function LoginView() {
+  return (
+    <Suspense fallback={null}>
+      <LoginViewInner />
+    </Suspense>
+  );
+}
+
+function LoginViewInner() {
   const router = useRouter();
   const sp = useSearchParams();
   const nextPath = sp.get("next");
@@ -177,6 +188,7 @@ export default function LoginView() {
               alt="logo"
               src={logo}
               className="w-full h-full object-contain"
+              priority
             />
           </div>
           <h1 className="text-2xl font-black text-white tracking-tight">
