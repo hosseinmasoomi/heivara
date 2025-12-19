@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useRouter } from "next/navigation";
 
 import ScrollProgress from "./components/ScrollProgress";
 import PostNavbar from "./components/PostNavbar";
@@ -12,7 +13,18 @@ import FAQSection from "./components/FAQSection";
 import PostFooter from "./components/PostFooter";
 import MagazineHeader from "../components/MagazineHeader";
 
-export default function MagazinePostView({ slug }) {
+function readingTimeFa(htmlOrText = "") {
+  const text = String(htmlOrText)
+    .replace(/<[^>]*>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+  const words = text ? text.split(" ").length : 0;
+  const minutes = Math.max(1, Math.ceil(words / 200));
+  return `${minutes} دقیقه`;
+}
+
+export default function MagazinePostView({ post }) {
+  const router = useRouter();
   const [scrollProgress, setScrollProgress] = useState(0);
 
   useEffect(() => {
@@ -32,64 +44,64 @@ export default function MagazinePostView({ slug }) {
     return () => window.removeEventListener("scroll", handleScroll);
   }, []);
 
+  // وقتی اسلاگ عوض شد، برو بالا
   useEffect(() => {
     window.scrollTo(0, 0);
-  }, [slug]);
+  }, [post?.id]);
+
+  if (!post) return null;
+
+  const tags =
+    Array.isArray(post.tags) && post.tags.length
+      ? post.tags.map((t) => (String(t).startsWith("#") ? String(t) : `#${t}`))
+      : [];
+
+  // faq shape: [{question, answer}] یا [{q,a}]
+  const faqItems = Array.isArray(post.faq)
+    ? post.faq
+        .map((x) => ({
+          q: x?.q || x?.question || "",
+          a: x?.a || x?.answer || "",
+        }))
+        .filter((x) => x.q.trim() && x.a.trim())
+    : [];
 
   return (
     <div
-      className="min-h-screen bg-[#020617] text-slate-200  selection:bg-indigo-500/30 selection:text-indigo-200"
+      className="min-h-screen bg-[#020617] text-slate-200 selection:bg-indigo-500/30 selection:text-indigo-200"
       dir="rtl"
     >
       <ScrollProgress value={scrollProgress} />
+
       <MagazineHeader
         onGoHome={() => router.push("/")}
         onGoDashboard={() => router.push("/wizard")}
       />
 
       <PostHero
-        badge="تحلیل ویژه هوش مصنوعی"
-        titleTop="پایان دوران"
-        titleHighlight="خلاقیت انسانی"
-        titleBottom="؟ چگونه GenAI بازار را می‌بلعد"
-        authorName="دکتر آرش پارسا"
-        readTime="۸ دقیقه"
-        views="۲.۴k"
+        badge={post.category || "مقاله"}
+        title={post.title}
+        authorName={post.author || "Admin"}
+        readTime={readingTimeFa(post.content)}
+        views={post.views ? String(post.views) : "—"}
+        coverImage={post.coverImage || ""}
+        date={post.date || ""}
       />
 
-      <main className="max-w-4xl mx-auto px-6 py-12">
+      <main className="max-w-4xl mx-auto px-6 py-12 space-y-10">
         <AIWarning />
 
-        <ArticleBody />
+        {/* ✅ محتوا از DB */}
+        <ArticleBody content={post.content || ""} />
 
-        <TagsBar
-          tags={["#هوش_مصنوعی", "#آینده_پژوهی", "#تکنولوژی", "#مارکتینگ"]}
-        />
+        {tags.length > 0 && <TagsBar tags={tags} />}
 
-        <FAQSection
-          subtitle="پاسخ‌های استخراج شده از پایگاه دانش"
-          items={[
-            {
-              q: "آیا هوش مصنوعی جایگزین شغل من خواهد شد؟",
-              a: "هوش مصنوعی جایگزین شغل کسانی می‌شود که از هوش مصنوعی استفاده نمی‌کنند...",
-            },
-            {
-              q: "هزینه استفاده از ابزارهایی مثل هیوارا چقدر است؟",
-              a: "هیوارا مدل‌های مختلفی دارد...",
-            },
-            {
-              q: "آیا داده‌های کسب‌وکار من امن می‌ماند؟",
-              a: "امنیت در هیوارا اولویت صفر است...",
-            },
-            {
-              q: "چقدر می‌توان به پیش‌بینی‌های AI اعتماد کرد؟",
-              a: "هیچ پیش‌بینی‌ای ۱۰۰٪ نیست...",
-            },
-          ]}
-        />
+        {faqItems.length > 0 && (
+          <FAQSection subtitle="سوالات پرتکرار" items={faqItems} />
+        )}
       </main>
 
-      <PostFooter />
+      <PostFooter post={post} />
     </div>
   );
 }

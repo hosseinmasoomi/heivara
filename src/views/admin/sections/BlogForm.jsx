@@ -1,6 +1,9 @@
 "use client";
 
 import React, { useEffect, useMemo, useState } from "react";
+import dynamic from "next/dynamic";
+
+const RichEditor = dynamic(() => import("@/components/Editor"), { ssr: false });
 
 function slugify(v) {
   return String(v || "")
@@ -32,12 +35,14 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
 
   useEffect(() => {
     if (!initialData) return;
+
     setTitle(initialData.title || "");
     setSlug(initialData.slug || "");
     setSummary(initialData.summary || "");
     setContent(initialData.content || "");
     setCoverImage(initialData.coverImage || "");
-    setCategoryId(initialData.categoryId || "");
+    setCategoryId(initialData.categoryId ? String(initialData.categoryId) : "");
+
     setTags(Array.isArray(initialData.tags) ? initialData.tags : []);
     setFaq(
       Array.isArray(initialData.faq)
@@ -49,7 +54,8 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
         ? initialData.meta
         : [{ key: "", value: "" }]
     );
-    setPublished(initialData.status === "PUBLISHED");
+
+    setPublished(!!initialData.published);
   }, [initialData]);
 
   const tabs = useMemo(
@@ -106,6 +112,7 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
         faq: cleanFaq(faq),
         meta: cleanMeta(meta),
         published,
+        authorId: initialData?.authorId ?? null,
       };
 
       await onSubmit?.(payload);
@@ -124,12 +131,10 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
           {isEdit ? "ویرایش مقاله" : "افزودن مقاله جدید"}
         </h2>
         <p className="text-slate-400 mt-1 text-sm">
-          همه چیز داخل دیتابیس ذخیره می‌شود. وضعیت انتشار را هم همین‌جا کنترل
-          کن.
+          وضعیت انتشار را هم همین‌جا کنترل کن.
         </p>
       </div>
 
-      {/* Tabs */}
       <div className="flex gap-2 border-b border-slate-800 mb-6">
         {tabs.map((t) => (
           <button
@@ -151,7 +156,6 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
         onSubmit={handleSubmit}
         className="bg-[#020617] border border-slate-800 rounded-2xl p-5 md:p-7 shadow-xl"
       >
-        {/* BASIC */}
         {activeTab === "basic" && (
           <div className="space-y-5">
             <div className="grid md:grid-cols-2 gap-4">
@@ -203,7 +207,7 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
                 >
                   <option value="">انتخاب کنید...</option>
                   {categories.map((c) => (
-                    <option key={c.id} value={c.id}>
+                    <option key={c.id} value={String(c.id)}>
                       {c.name}
                     </option>
                   ))}
@@ -233,12 +237,8 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
                 className="mt-2 w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500"
                 placeholder="https://..."
               />
-              <p className="text-xs text-slate-500 mt-2">
-                فعلاً آپلود نداریم؛ URL بده. (بعداً می‌تونیم آپلود اضافه کنیم)
-              </p>
             </div>
 
-            {/* Tags */}
             <div>
               <label className="text-sm font-bold text-slate-300">تگ‌ها</label>
               <div className="mt-2 flex gap-2">
@@ -276,24 +276,13 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
           </div>
         )}
 
-        {/* CONTENT */}
         {activeTab === "content" && (
           <div className="space-y-3">
             <label className="text-sm font-bold text-slate-300">محتوا</label>
-            <textarea
-              value={content}
-              onChange={(e) => setContent(e.target.value)}
-              className="w-full bg-slate-900/50 border border-slate-700 rounded-xl px-4 py-3 text-white outline-none focus:border-indigo-500 min-h-[360px] font-mono text-sm"
-              placeholder="متن مقاله..."
-            />
-            <p className="text-xs text-slate-500">
-              فعلاً ادیتور ساده گذاشتم که همه چیز پایدار و سریع جلو بره؛ بعداً
-              می‌تونیم Editor شما را وصل کنیم.
-            </p>
+            <RichEditor value={content} onChange={setContent} />
           </div>
         )}
 
-        {/* FAQ */}
         {activeTab === "faq" && (
           <div className="space-y-3">
             <label className="text-sm font-bold text-slate-300">
@@ -337,7 +326,6 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
           </div>
         )}
 
-        {/* META */}
         {activeTab === "meta" && (
           <div className="space-y-3">
             <label className="text-sm font-bold text-slate-300">متاتگ‌ها</label>
@@ -379,7 +367,6 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
           </div>
         )}
 
-        {/* ACTIONS */}
         <div className="flex items-center gap-3 mt-7">
           <button
             type="submit"
@@ -387,9 +374,7 @@ export default function BlogForm({ initialData, onSubmit, categories = [] }) {
             className="px-5 py-3 rounded-xl bg-indigo-600 hover:bg-indigo-500 text-white font-extrabold disabled:opacity-60"
           >
             {loading
-              ? isEdit
-                ? "در حال ذخیره..."
-                : "در حال ایجاد..."
+              ? "در حال ذخیره..."
               : isEdit
               ? "ذخیره تغییرات"
               : "ساخت مقاله"}

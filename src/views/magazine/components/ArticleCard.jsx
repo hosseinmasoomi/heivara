@@ -3,12 +3,27 @@
 import { Bookmark, Share2 } from "lucide-react";
 
 export default function ArticleCard({ article, onClick }) {
+  const hasUrl =
+    typeof article.image === "string" &&
+    (article.image.startsWith("http") || article.image.startsWith("/"));
+
   return (
     <div
       onClick={onClick}
       className="group bg-[#0f172a] rounded-2xl border border-slate-800 overflow-hidden hover:border-indigo-500/30 transition-all duration-300 hover:-translate-y-1 cursor-pointer"
     >
-      <div className={`h-48 ${article.image} relative`}>
+      <div className="h-48 relative">
+        {hasUrl ? (
+          <img
+            src={article.image}
+            alt={article.title}
+            className="absolute inset-0 w-full h-full object-cover"
+            loading="lazy"
+          />
+        ) : (
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900" />
+        )}
+
         <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-lg border border-white/10">
           {article.category}
         </div>
