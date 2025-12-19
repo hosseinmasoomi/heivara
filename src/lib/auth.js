@@ -78,18 +78,12 @@ export async function attachSession(res, userId) {
 
 export async function createSessionResponse(userId, redirectTo = null) {
   const res = redirectTo
-    ? NextResponse.redirect(
-        new URL(
-          redirectTo,
-          process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-        )
-      )
+    ? NextResponse.redirect(redirectTo) // مسیر نسبی
     : NextResponse.json({ ok: true });
 
   await attachSession(res, userId);
   return res;
 }
-
 export function clearSessionCookie(res) {
   res.cookies.set(SESSION_COOKIE, "", clearCookieOptions());
   return res;

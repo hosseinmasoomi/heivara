@@ -24,10 +24,6 @@ export default function RootLayout({ children }) {
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased rtl`}
       >
-        <link
-          rel="stylesheet"
-          href="https://cdn.ckeditor.com/ckeditor5/41.4.2/classic/styles.css"
-        />
         <UserProvider>{children}</UserProvider>
       </body>
     </html>
