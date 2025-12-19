@@ -3,11 +3,28 @@ import { NextResponse } from "next/server";
 
 const SESSION_COOKIE = "hivara_session";
 
+function getInternalOrigin(request) {
+  // پشت Cloudflare/Nginx اینها معمولاً درست‌ترن
+  const xfHost = request.headers.get("x-forwarded-host");
+  const host = xfHost || request.headers.get("host") || request.nextUrl.host;
+
+  const xfProto = request.headers.get("x-forwarded-proto");
+  let proto = xfProto || request.nextUrl.protocol.replace(":", "") || "http";
+
+  // اگر رفت روی لوکال/127، حتماً http
+  if (host.includes("127.0.0.1") || host.includes("localhost")) {
+    proto = "http";
+  }
+
+  return `${proto}://${host}`;
+}
+
 async function fetchMe(request) {
   const raw = request.cookies.get(SESSION_COOKIE)?.value;
   if (!raw) return { ok: false };
 
-  const url = new URL("/api/auth/me", request.nextUrl.origin);
+  const origin = getInternalOrigin(request);
+  const url = new URL("/api/auth/me", origin);
 
   const res = await fetch(url, {
     method: "GET",
@@ -33,7 +50,6 @@ export async function middleware(request) {
   const isAuthPage = pathname === "/login";
   const isOnboarding = pathname === "/onboarding";
 
-  // فقط برای مسیرهای حساس
   const needsAuthCheck =
     isUserArea || isAdminArea || isOnboarding || isAuthPage;
 
@@ -41,7 +57,6 @@ export async function middleware(request) {
 
   const me = await fetchMe(request);
 
-  // 1) اگر لاگین نیست و رفت admin/user/onboarding => login
   if (!me.ok && (isUserArea || isAdminArea || isOnboarding)) {
     const url = request.nextUrl.clone();
     url.pathname = "/login";
@@ -49,35 +64,30 @@ export async function middleware(request) {
     return NextResponse.redirect(url);
   }
 
-  // 2) اگر لاگین هست، /login رو نبینه
   if (me.ok && isAuthPage) {
     const url = request.nextUrl.clone();
     url.pathname = me.user.role === "ADMIN" ? "/admin" : "/user";
     return NextResponse.redirect(url);
   }
 
-  // 3) اگر onboarding ناقصه، همه‌جا بفرست onboarding (به جز خود onboarding)
   if (me.ok && !me.user.onboardingCompleted && !isOnboarding) {
     const url = request.nextUrl.clone();
     url.pathname = "/onboarding";
     return NextResponse.redirect(url);
   }
 
-  // 4) اگر onboarding کامل شده ولی رفت onboarding => بفرست پنل
   if (me.ok && me.user.onboardingCompleted && isOnboarding) {
     const url = request.nextUrl.clone();
     url.pathname = me.user.role === "ADMIN" ? "/admin" : "/user";
     return NextResponse.redirect(url);
   }
 
-  // 5) قفل ادمین: یوزر عادی نتونه وارد /admin بشه
   if (me.ok && isAdminArea && me.user.role !== "ADMIN") {
     const url = request.nextUrl.clone();
     url.pathname = "/user";
     return NextResponse.redirect(url);
   }
 
-  // 6) اگر ادمین وارد /user شد، ترجیحاً ببریمش /admin
   if (me.ok && isUserArea && me.user.role === "ADMIN") {
     const url = request.nextUrl.clone();
     url.pathname = "/admin";
