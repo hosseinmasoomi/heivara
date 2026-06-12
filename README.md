@@ -92,3 +92,32 @@ docker compose down -v
 - Blog uploads persist in the Docker volume mounted to `/app/public/uploads/blog`.
 - Knowledge files are mounted from `./data/knowledge`.
 - PostgreSQL data persists in the `postgres_data` volume.
+
+## Production without building on the server
+
+Use this path when the server cannot reach npm registries.
+
+Build the runtime image on a machine that can install dependencies:
+
+```bash
+npm install
+npx prisma generate
+npm run build
+docker build -f Dockerfile.release -t heivara:prod .
+docker save heivara:prod | gzip > heivara-prod.tar.gz
+```
+
+Copy the image archive to the server:
+
+```bash
+scp heivara-prod.tar.gz root@YOUR_SERVER_IP:/var/www/heivara/
+```
+
+On the server:
+
+```bash
+cd /var/www/heivara
+gunzip -c heivara-prod.tar.gz | docker load
+docker compose -f docker-compose.runtime.yml up -d
+docker compose -f docker-compose.runtime.yml exec app npm run admin:create
+```

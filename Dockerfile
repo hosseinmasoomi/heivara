@@ -1,22 +1,31 @@
 FROM node:22-bookworm-slim AS base
+
 WORKDIR /app
 ENV NEXT_TELEMETRY_DISABLED=1
-RUN corepack enable
 
 FROM base AS deps
-COPY package.json pnpm-lock.yaml ./
-RUN pnpm config set fetch-retries 5 \
-  && pnpm config set fetch-timeout 600000 \
-  && pnpm config set network-concurrency 8 \
-  && pnpm install --frozen-lockfile
+
+ARG NPM_REGISTRY=https://mirrors.cloud.tencent.com/npm/
+
+COPY package.json package-lock.json ./
+
+RUN npm config set registry ${NPM_REGISTRY} \
+  && npm config set fetch-retries 5 \
+  && npm config set fetch-retry-mintimeout 20000 \
+  && npm config set fetch-retry-maxtimeout 120000 \
+  && npm config set timeout 600000 \
+  && npm ci --no-audit --no-fund
 
 FROM deps AS builder
+
 COPY . .
-RUN npx prisma generate
-RUN npm run build
-RUN pnpm prune --prod
+
+RUN node node_modules/prisma/build/index.js generate
+RUN node node_modules/next/dist/bin/next build
+RUN npm prune --omit=dev
 
 FROM base AS runner
+
 ENV NODE_ENV=production
 ENV PORT=3000
 ENV HOSTNAME=0.0.0.0

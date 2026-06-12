@@ -22,11 +22,7 @@ services:
       - "${POSTGRES_PORT:-5432}:5432"
 
   app:
-    build:
-      context: .
-      dockerfile: Dockerfile
-      args:
-        NPM_REGISTRY: ${NPM_REGISTRY:-https://mirrors.cloud.tencent.com/npm/}
+    image: ${APP_IMAGE:-heivara:prod}
     container_name: heivara-app
     restart: unless-stopped
     depends_on:
