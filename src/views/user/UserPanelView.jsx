@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useEffect, useMemo, useState } from "react";
 import UserSidebar from "./components/UserSidebar";
 import UserHeader from "./components/UserHeader";
 import UserContent from "./components/UserContent";
@@ -11,15 +11,67 @@ export default function UserPanelView() {
 
   const [activeMenu, setActiveMenu] = useState("dashboard");
   const [generatedPlan, setGeneratedPlan] = useState(null);
+  const [projects, setProjects] = useState([]);
+
+  useEffect(() => {
+    let alive = true;
+
+    (async () => {
+      try {
+        const res = await fetch("/api/projects", {
+          method: "GET",
+          credentials: "include",
+        });
+        const data = await res.json().catch(() => null);
+        if (!alive) return;
+        if (res.ok && data?.ok) setProjects(data.projects || []);
+      } catch {
+        // no-op
+      }
+    })();
+
+    return () => {
+      alive = false;
+    };
+  }, []);
 
   const handleNewProjectClick = () => {
     setActiveMenu("ai_creator");
     setGeneratedPlan(null);
   };
 
-  const handleWizardResults = (plan) => {
+  const handleWizardResults = async (plan, meta = {}) => {
     setGeneratedPlan(plan);
     window.scrollTo({ top: 0, behavior: "smooth" });
+
+    const fallbackProject = {
+      id: `local-${Date.now()}`,
+      idea: meta?.idea || "ایده بدون عنوان",
+      title: plan?.branding?.[0]?.name || "پروژه جدید",
+      aiScore: Number(plan?.evaluation?.score || 0),
+      status: "Completed",
+      createdAt: new Date().toISOString(),
+    };
+
+    try {
+      const res = await fetch("/api/projects", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        credentials: "include",
+        body: JSON.stringify({
+          idea: meta?.idea || "ایده بدون عنوان",
+          plan,
+        }),
+      });
+      const data = await res.json().catch(() => null);
+      if (res.ok && data?.ok && data.project) {
+        setProjects((prev) => [data.project, ...prev]);
+      } else {
+        setProjects((prev) => [fallbackProject, ...prev]);
+      }
+    } catch {
+      setProjects((prev) => [fallbackProject, ...prev]);
+    }
   };
 
   const handleResetWizard = () => {
@@ -27,13 +79,17 @@ export default function UserPanelView() {
     window.scrollTo({ top: 0, behavior: "smooth" });
   };
 
-  const projects = useMemo(() => {
-    if (!user?.projects) return [];
-    return user.projects.map((p) => ({
-      ...p,
+  const mappedProjects = useMemo(() => {
+    return projects.map((p) => ({
+      id: p.id,
+      name: p.title,
+      type: "AI Plan",
+      status: p.status,
+      aiScore: p.aiScore,
+      idea: p.idea,
       date: new Date(p.createdAt).toLocaleString("fa-IR"),
     }));
-  }, [user]);
+  }, [projects]);
 
   const viewUser = user
     ? {
@@ -71,7 +127,7 @@ export default function UserPanelView() {
           onNewProject={handleNewProjectClick}
           onWizardResults={handleWizardResults}
           onResetWizard={handleResetWizard}
-          projects={projects}
+          projects={mappedProjects}
           loading={loading}
         />
       </main>

@@ -17,47 +17,46 @@ function readingTimeFa(htmlOrText = "") {
 export default async function MagazinePage() {
   const posts = await prisma.blogPost.findMany({
     where: { status: "PUBLISHED" },
-    orderBy: { publishedAt: "desc" },
+    orderBy: [{ publishedAt: "desc" }, { createdAt: "desc" }],
     include: { category: true, author: true },
     take: 24,
   });
 
-  // ترندها از تگ‌ها (جمع‌آوری ساده)
   const trendMap = new Map();
-  for (const p of posts) {
-    if (Array.isArray(p.tags)) {
-      for (const t of p.tags) {
-        const key = String(t || "").trim();
-        if (!key) continue;
-        trendMap.set(key, (trendMap.get(key) || 0) + 1);
-      }
+  for (const post of posts) {
+    if (!Array.isArray(post.tags)) continue;
+    for (const tag of post.tags) {
+      const key = String(tag || "").trim();
+      if (!key) continue;
+      trendMap.set(key, (trendMap.get(key) || 0) + 1);
     }
   }
+
   const trends = [...trendMap.entries()]
     .sort((a, b) => b[1] - a[1])
     .slice(0, 10)
-    .map(([t]) => (t.startsWith("#") ? t : `#${t}`));
+    .map(([tag]) => (tag.startsWith("#") ? tag : `#${tag}`));
 
-  // دیتا در فرم UI مگزین
-  const articles = posts.map((p) => ({
-    slug: p.slug,
-    category: p.category?.name || "عمومی",
-    title: p.title,
+  const articles = posts.map((post) => ({
+    slug: post.slug,
+    category: post.category?.name || "عمومی",
+    title: post.title,
     excerpt:
-      p.summary ||
-      (p.content
-        ? p.content.replace(/<[^>]*>/g, "").slice(0, 160) + "..."
+      post.summary ||
+      (post.content
+        ? `${post.content.replace(/<[^>]*>/g, "").slice(0, 160)}...`
         : ""),
-    image: p.coverImage || "", // اگر خالی بود تو ArticleCard fallback می‌ذاریم
-    readTime: readingTimeFa(p.content),
-    author: p.author?.name || "Admin",
-    date: new Date(p.publishedAt || p.createdAt).toLocaleDateString("fa-IR"),
+    image: post.coverImage || "",
+    readTime: readingTimeFa(post.content),
+    author: post.author?.name || "Admin",
+    date: new Date(post.publishedAt || post.createdAt).toLocaleDateString("fa-IR"),
   }));
 
-  // featured: اولین مقاله
-  const featured = articles[0] || null;
-
   return (
-    <MagazineView articles={articles} trends={trends} featured={featured} />
+    <MagazineView
+      articles={articles}
+      trends={trends}
+      featured={articles[0] || null}
+    />
   );
 }

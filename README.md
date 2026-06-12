@@ -1,37 +1,94 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://github.com/vercel/next.js/tree/canary/packages/create-next-app).
+# Heivara
 
-## Getting Started
+Next.js 16 + Prisma + PostgreSQL
 
-First, run the development server:
+## Local development
 
 ```bash
+npm ci
+npx prisma generate
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Production with Docker
 
-You can start editing the page by modifying `app/page.js`. The page auto-updates as you edit the file.
+### 1. Prepare env
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+```bash
+cp .env.production.example .env.production
+```
 
-## Learn More
+Set these values before deployment:
 
-To learn more about Next.js, take a look at the following resources:
+- `POSTGRES_PASSWORD`
+- `NEXT_PUBLIC_APP_URL`
+- `OTP_SECRET`
+- `SESSION_SECRET`
+- `ARVAN_AI_BASE_URL`
+- `ARVAN_AI_API_KEY`
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+Do not set `DEV_MASTER_OTP` in production.
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+### 2. Start services
 
-## Deploy on Vercel
+```bash
+docker compose up -d --build
+```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+App:
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
-# heivara
+- `http://SERVER_IP:3000`
+
+Healthcheck:
+
+- `http://SERVER_IP:3000/api/health`
+
+### 3. Create or promote admin
+
+After the stack is up:
+
+```bash
+docker compose exec app npm run admin:create
+```
+
+The script uses:
+
+- `ADMIN_PHONE`
+- `ADMIN_NAME`
+- `ADMIN_EMAIL`
+
+from `.env.production`.
+
+### 4. Useful commands
+
+Logs:
+
+```bash
+docker compose logs -f app
+docker compose logs -f postgres
+```
+
+Restart app:
+
+```bash
+docker compose restart app
+```
+
+Stop:
+
+```bash
+docker compose down
+```
+
+Stop and remove volumes:
+
+```bash
+docker compose down -v
+```
+
+## Docker notes
+
+- Prisma migrations run automatically on container startup.
+- Blog uploads persist in the Docker volume mounted to `/app/public/uploads/blog`.
+- Knowledge files are mounted from `./data/knowledge`.
+- PostgreSQL data persists in the `postgres_data` volume.

@@ -1,20 +1,19 @@
 "use client";
 
-import { Clock, Eye, Zap } from "lucide-react";
+import Image from "next/image";
+import { Clock, Eye, Image as ImageIcon, Zap } from "lucide-react";
 
 function splitFancyTitle(title = "") {
-  const t = String(title || "").trim();
-  if (!t) return { top: "", highlight: "", bottom: "" };
+  const text = String(title || "").trim();
+  if (!text) return { top: "", highlight: "", bottom: "" };
 
-  // اگر کاربر خودش با | جدا کرد: top|highlight|bottom
-  if (t.includes("|")) {
-    const [top, highlight, bottom] = t.split("|").map((x) => x.trim());
+  if (text.includes("|")) {
+    const [top, highlight, bottom] = text.split("|").map((item) => item.trim());
     return { top: top || "", highlight: highlight || "", bottom: bottom || "" };
   }
 
-  // حالت پیش‌فرض: وسط جمله رو هایلایت کن
-  const words = t.split(" ").filter(Boolean);
-  if (words.length < 3) return { top: t, highlight: "", bottom: "" };
+  const words = text.split(" ").filter(Boolean);
+  if (words.length < 3) return { top: text, highlight: "", bottom: "" };
 
   const mid = Math.floor(words.length / 2);
   return {
@@ -26,18 +25,17 @@ function splitFancyTitle(title = "") {
 
 export default function PostHero({
   badge,
-  // حالت جدید
   title,
-  // حالت قدیمی (اگر هنوز جایی استفاده می‌کنی)
   titleTop,
   titleHighlight,
   titleBottom,
   authorName,
   readTime,
   views,
+  coverImage,
 }) {
   const isLegacy = titleTop || titleHighlight || titleBottom;
-  const t = isLegacy
+  const resolvedTitle = isLegacy
     ? {
         top: titleTop || "",
         highlight: titleHighlight || "",
@@ -45,8 +43,25 @@ export default function PostHero({
       }
     : splitFancyTitle(title || "");
 
+  const hasImage =
+    typeof coverImage === "string" &&
+    (coverImage.startsWith("http") || coverImage.startsWith("/"));
+
   return (
-    <header className="relative pt-32 pb-20 px-6 border-b border-slate-800 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#020617] to-[#020617]">
+    <header className="relative pt-32 pb-20 px-6 border-b border-slate-800 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-indigo-900/20 via-[#020617] to-[#020617] overflow-hidden">
+      {hasImage ? (
+        <>
+          <Image
+            src={coverImage}
+            alt={title || "Post cover"}
+            fill
+            className="absolute inset-0 w-full h-full object-cover opacity-20"
+            unoptimized
+          />
+          <div className="absolute inset-0 bg-[#020617]/75" />
+        </>
+      ) : null}
+
       <div className="max-w-4xl mx-auto text-center relative z-10">
         <div className="inline-flex items-center gap-2 bg-indigo-500/10 border border-indigo-500/20 text-indigo-400 px-3 py-1 rounded-full text-xs font-bold mb-6">
           <Zap size={12} className="fill-indigo-400" />
@@ -54,26 +69,29 @@ export default function PostHero({
         </div>
 
         <h1 className="text-3xl md:text-5xl lg:text-6xl font-black text-white leading-tight mb-8 tracking-tight drop-shadow-2xl">
-          {t.top}{" "}
-          {t.highlight ? (
+          {resolvedTitle.top}{" "}
+          {resolvedTitle.highlight ? (
             <span className="text-transparent bg-clip-text bg-gradient-to-r from-indigo-400 to-cyan-400">
-              {t.highlight}
+              {resolvedTitle.highlight}
             </span>
           ) : null}
-          {t.bottom ? (
+          {resolvedTitle.bottom ? (
             <>
               <br />
-              {t.bottom}
+              {resolvedTitle.bottom}
             </>
           ) : null}
         </h1>
 
         <div className="flex flex-wrap items-center justify-center gap-6 text-sm text-slate-500 font-mono">
           <div className="flex items-center gap-2">
-            <img
+            <Image
               src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
               alt="Author"
+              width={32}
+              height={32}
               className="w-8 h-8 rounded-full border border-slate-700"
+              unoptimized
             />
             <span className="text-slate-300">{authorName}</span>
           </div>
@@ -90,6 +108,12 @@ export default function PostHero({
             <Eye size={14} /> {views} بازدید
           </div>
         </div>
+
+        {!hasImage ? (
+          <div className="mt-10 mx-auto max-w-xl h-56 rounded-[28px] border border-slate-800 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-slate-500">
+            <ImageIcon size={36} />
+          </div>
+        ) : null}
       </div>
 
       <div className="absolute inset-0 bg-grid opacity-20 pointer-events-none" />

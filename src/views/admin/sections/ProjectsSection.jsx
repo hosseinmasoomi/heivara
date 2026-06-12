@@ -2,9 +2,9 @@
 
 import React from "react";
 import StatusBadge from "../shared/StatusBadge";
+import { Briefcase } from "lucide-react";
 
-export default function ProjectsSection({ projectsData, icons }) {
-  const { Briefcase } = icons;
+export default function ProjectsSection({ projectsData }) {
 
   return (
     <div className="animate-fade-in bg-[#020617] border border-slate-800 rounded-2xl overflow-hidden shadow-xl">
@@ -19,6 +19,7 @@ export default function ProjectsSection({ projectsData, icons }) {
           <tr>
             <th className="px-6 py-4">شناسه</th>
             <th className="px-6 py-4">عنوان پروژه</th>
+            <th className="px-6 py-4">ایده ثبت‌شده</th>
             <th className="px-6 py-4">صاحب اثر</th>
             <th className="px-6 py-4">دسته‌بندی</th>
             <th className="px-6 py-4">نمره AI</th>
@@ -33,6 +34,9 @@ export default function ProjectsSection({ projectsData, icons }) {
                 {p.id}
               </td>
               <td className="px-6 py-4 font-bold text-white">{p.name}</td>
+              <td className="px-6 py-4 text-slate-400 text-xs max-w-[320px] truncate">
+                {p.idea}
+              </td>
               <td className="px-6 py-4">{p.owner}</td>
               <td className="px-6 py-4 text-xs">
                 <span className="bg-slate-700 px-2 py-1 rounded text-slate-300">

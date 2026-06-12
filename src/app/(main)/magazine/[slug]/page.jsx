@@ -6,8 +6,8 @@ export const runtime = "nodejs";
 export const dynamic = "force-dynamic";
 
 export default async function MagazinePostPage({ params }) {
-  const p = await params; // Next 16
-  const slug = String(p?.slug || "");
+  const resolvedParams = await params;
+  const slug = String(resolvedParams?.slug || "");
 
   const post = await prisma.blogPost.findUnique({
     where: { slug },
@@ -15,6 +15,13 @@ export default async function MagazinePostPage({ params }) {
   });
 
   if (!post || post.status !== "PUBLISHED") notFound();
+
+  await prisma.blogPost
+    .update({
+      where: { id: post.id },
+      data: { views: { increment: 1 } },
+    })
+    .catch(() => {});
 
   return (
     <MagazinePostView
@@ -32,6 +39,7 @@ export default async function MagazinePostPage({ params }) {
         date: new Date(post.publishedAt || post.createdAt).toLocaleDateString(
           "fa-IR"
         ),
+        views: (post.views ?? 0) + 1,
       }}
     />
   );

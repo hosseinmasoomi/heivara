@@ -2,11 +2,15 @@
   "name": "heivara",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@11.6.0",
   "scripts": {
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint"
+    "lint": "eslint",
+    "prisma:generate": "prisma generate",
+    "prisma:migrate:deploy": "prisma migrate deploy",
+    "admin:create": "node scripts/create-admin.mjs"
   },
   "dependencies": {
     "@ckeditor/ckeditor5-build-classic": "^44.3.0",

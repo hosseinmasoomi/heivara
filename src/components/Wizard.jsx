@@ -36,12 +36,13 @@ export default function Wizard({ onResults }) {
     setTerminalLines([]);
 
     const logs = [
-      "راه‌اندازی هسته هیوارا نسخه ۲.۴...",
+      "راه‌اندازی شورای استراتژی هیوارا...",
       "اتصال به شبکه عصبی...",
       "تحلیل احساسات بازار برای داده ورودی...",
       "شناسایی زبان: فارسی (FA)",
       "بررسی ساختار و موجودیت‌های کسب‌وکار...",
-      "محاسبه تخمینی حجم بازار...",
+      "استخراج رقبا و محاسبه TAM/SAM/SOM...",
+      "آماده‌سازی میز بررسی تهمتن...",
     ];
 
     let i = 0;
@@ -68,9 +69,11 @@ export default function Wizard({ onResults }) {
       },
       { text: "> تزریق داده‌های برندینگ...", delay: 800, type: "code" },
       { text: "> کامپایل بردارهای هویت بصری...", delay: 1600, type: "code" },
-      { text: "> بهینه‌سازی الگوریتم‌های رشد...", delay: 2500, type: "code" },
-      { text: "> تولید قلاب‌های ویروسی...", delay: 3200, type: "code" },
-      { text: "> ساخت و جمع‌بندی گزارش نهایی...", delay: 4000, type: "code" },
+      { text: "> تحلیل رقبا و موقعیت بازار...", delay: 2300, type: "code" },
+      { text: "> بهینه‌سازی الگوریتم‌های رشد...", delay: 3000, type: "code" },
+      { text: "> تولید قلاب‌های ویروسی...", delay: 3700, type: "code" },
+      { text: "> صدور حکم نهایی توسط تهمتن...", delay: 4400, type: "code" },
+      { text: "> ساخت و جمع‌بندی گزارش نهایی...", delay: 5000, type: "code" },
     ];
 
     processes.forEach((p) => {
@@ -91,7 +94,7 @@ export default function Wizard({ onResults }) {
       addLog("پردازش تکمیل شد. آماده‌سازی داشبورد...", "success");
 
       // ارسال خروجی به والد (UserPage)
-      setTimeout(() => onResults?.(plan), 900);
+      setTimeout(() => onResults?.(plan, { idea }), 900);
     } catch (error) {
       console.error(error);
       addLog("خطای بحرانی: قطع ارتباط با سرور", "warn");
@@ -216,12 +219,14 @@ export default function Wizard({ onResults }) {
             </div>
           </div>
 
-          <div className="grid md:grid-cols-4 gap-4 mb-12">
+          <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4 mb-12">
             {[
               { title: "DNA برند", subtitle: "تحلیل هسته مرکزی" },
               { title: "سیستم بصری", subtitle: "طراحی هویت" },
+              { title: "تحلیل بازار", subtitle: "رقبا و SWOT" },
               { title: "زیرساخت فنی", subtitle: "معماری وب" },
               { title: "موتور رشد", subtitle: "استراتژی فروش" },
+              { title: "حکم تهمتن", subtitle: "نمره و سرمایه گذاری" },
             ].map((item, i) => (
               <div
                 key={i}

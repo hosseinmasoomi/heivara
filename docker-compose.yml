@@ -1,0 +1,49 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: heivara-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_DB: ${POSTGRES_DB:-heivara}
+      POSTGRES_USER: ${POSTGRES_USER:-heivara}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-change-this-password}
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test:
+        [
+          "CMD-SHELL",
+          "pg_isready -U ${POSTGRES_USER:-heivara} -d ${POSTGRES_DB:-heivara}",
+        ]
+      interval: 10s
+      timeout: 5s
+      retries: 10
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: heivara-app
+    restart: unless-stopped
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - .env.production
+    environment:
+      NODE_ENV: production
+      PORT: 3000
+      DATABASE_URL: postgresql://${POSTGRES_USER:-heivara}:${POSTGRES_PASSWORD:-change-this-password}@postgres:5432/${POSTGRES_DB:-heivara}?schema=public
+      PROJECT_KNOWLEDGE_DIR: /app/data/knowledge
+      NEXT_PUBLIC_APP_URL: ${NEXT_PUBLIC_APP_URL:-http://localhost:3000}
+    volumes:
+      - blog_uploads:/app/public/uploads/blog
+      - ./data/knowledge:/app/data/knowledge:ro
+    ports:
+      - "${APP_PORT:-3000}:3000"
+
+volumes:
+  postgres_data:
+  blog_uploads:

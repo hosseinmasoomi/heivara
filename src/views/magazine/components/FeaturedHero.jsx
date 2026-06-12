@@ -1,7 +1,12 @@
-import { Clock } from "lucide-react";
+import Image from "next/image";
+import { Clock, Image as ImageIcon } from "lucide-react";
 
 export default function FeaturedHero({ onClick, article }) {
   if (!article) return null;
+
+  const hasImage =
+    typeof article.image === "string" &&
+    (article.image.startsWith("http") || article.image.startsWith("/"));
 
   return (
     <section onClick={onClick} className="mb-20 relative group cursor-pointer">
@@ -27,25 +32,44 @@ export default function FeaturedHero({ onClick, article }) {
           </p>
 
           <div className="flex items-center gap-4 mt-auto">
-            <img
+            <Image
               src="https://api.dicebear.com/7.x/avataaars/svg?seed=Felix"
               alt="Author"
+              width={40}
+              height={40}
               className="w-10 h-10 rounded-full border-2 border-slate-800"
+              unoptimized
             />
             <div>
-              <div className="text-white font-bold text-sm">
-                {article.author}
-              </div>
+              <div className="text-white font-bold text-sm">{article.author}</div>
               <div className="text-slate-500 text-xs">{article.date}</div>
             </div>
           </div>
         </div>
 
         <div className="bg-gradient-to-br from-indigo-900 to-slate-900 min-h-[300px] relative overflow-hidden">
-          <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="w-64 h-64 bg-indigo-500 rounded-full blur-[100px] opacity-50 animate-pulse-fast" />
-          </div>
+          {hasImage ? (
+            <>
+              <Image
+                src={article.image}
+                alt={article.title}
+                fill
+                className="absolute inset-0 w-full h-full object-cover"
+                unoptimized
+              />
+              <div className="absolute inset-0 bg-gradient-to-t from-[#020617] via-[#020617]/30 to-transparent" />
+            </>
+          ) : (
+            <>
+              <div className="absolute inset-0 bg-[url('https://grainy-gradients.vercel.app/noise.svg')] opacity-20" />
+              <div className="absolute inset-0 flex items-center justify-center">
+                <div className="w-64 h-64 bg-indigo-500 rounded-full blur-[100px] opacity-50 animate-pulse-fast" />
+              </div>
+              <div className="absolute inset-0 flex items-center justify-center text-slate-400">
+                <ImageIcon size={42} />
+              </div>
+            </>
+          )}
         </div>
       </div>
     </section>

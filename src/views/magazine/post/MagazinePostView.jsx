@@ -4,7 +4,6 @@ import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 
 import ScrollProgress from "./components/ScrollProgress";
-import PostNavbar from "./components/PostNavbar";
 import PostHero from "./components/PostHero";
 import AIWarning from "./components/AIWarning";
 import ArticleBody from "./components/ArticleBody";
@@ -26,19 +25,19 @@ function readingTimeFa(htmlOrText = "") {
 function normalizeFaq(faq) {
   if (!Array.isArray(faq)) return [];
   return faq
-    .map((x) => ({
-      q: x?.q || x?.question || "",
-      a: x?.a || x?.answer || "",
+    .map((item) => ({
+      q: item?.q || item?.question || "",
+      a: item?.a || item?.answer || "",
     }))
-    .filter((x) => x.q.trim() && x.a.trim());
+    .filter((item) => item.q.trim() && item.a.trim());
 }
 
 function normalizeTags(tags) {
   if (!Array.isArray(tags)) return [];
   return tags
-    .map((t) => String(t || "").trim())
+    .map((tag) => String(tag || "").trim())
     .filter(Boolean)
-    .map((t) => (t.startsWith("#") ? t : `#${t}`));
+    .map((tag) => (tag.startsWith("#") ? tag : `#${tag}`));
 }
 
 export default function MagazinePostView({ post }) {
@@ -77,21 +76,18 @@ export default function MagazinePostView({ post }) {
     >
       <ScrollProgress value={scrollProgress} />
 
-      {/* هدر اصلی مگزین */}
       <MagazineHeader
         onGoHome={() => router.push("/")}
         onGoDashboard={() => router.push("/wizard")}
       />
 
-      {/* نوبار پست (اشتراک/بوکمارک/بازگشت) */}
-
-      {/* هیرو */}
       <PostHero
         badge={post.category || "مقاله"}
         title={post.title}
         authorName={post.author || "Admin"}
         readTime={post.readTime || readingTimeFa(post.content)}
         views={post.views != null ? String(post.views) : "—"}
+        coverImage={post.coverImage || ""}
       />
 
       <main className="max-w-4xl mx-auto px-6 py-12">
@@ -99,11 +95,11 @@ export default function MagazinePostView({ post }) {
 
         <ArticleBody content={post.content || ""} />
 
-        {tags.length > 0 && <TagsBar tags={tags} />}
+        {tags.length > 0 ? <TagsBar tags={tags} /> : null}
 
-        {faqItems.length > 0 && (
+        {faqItems.length > 0 ? (
           <FAQSection subtitle="سوالات پرتکرار" items={faqItems} />
-        )}
+        ) : null}
       </main>
 
       <PostFooter />

@@ -26,6 +26,13 @@ export default function UserContent({
   onResetWizard,
   projects,
 }) {
+  const avgScore = projects.length
+    ? Math.round(
+        projects.reduce((sum, p) => sum + Number(p.aiScore || 0), 0) /
+          projects.length
+      )
+    : 0;
+
   return (
     <div className="flex-1 overflow-y-auto p-4 md:p-8">
       {/* DASHBOARD */}
@@ -35,8 +42,8 @@ export default function UserContent({
           <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
             <StatCard
               title="پروژه‌های فعال"
-              value="12"
-              change="+2 در این هفته"
+              value={String(projects.length)}
+              change="ثبت‌شده در حساب شما"
               icon={LayoutGrid}
               trend="up"
             />
@@ -51,9 +58,9 @@ export default function UserContent({
             />
             <StatCard
               title="میانگین نمره ایده"
-              value="84"
+              value={String(avgScore)}
               unit="/ 100"
-              change="+5% رشد کیفیت"
+              change="محاسبه از خروجی‌های هیوارا"
               icon={TrendingUp}
               trend="up"
             />
@@ -175,7 +182,46 @@ export default function UserContent({
       )}
 
       {/* PLACEHOLDERS */}
-      {["projects", "billing", "reports", "settings"].includes(activeMenu) && (
+      {activeMenu === "projects" && (
+        <div className="max-w-7xl mx-auto w-full space-y-4 animate-fade-in">
+          <h3 className="text-lg font-bold text-white">پروژه‌های من</h3>
+          <div className="bg-[#0f172a] border border-slate-800 rounded-2xl overflow-hidden">
+            <table className="w-full text-right">
+              <thead className="bg-[#1e293b]/50 border-b border-slate-800 text-xs text-slate-400 uppercase font-bold">
+                <tr>
+                  <th className="px-6 py-4">نام پروژه</th>
+                  <th className="px-6 py-4">ایده ثبت‌شده</th>
+                  <th className="px-6 py-4">نمره AI</th>
+                  <th className="px-6 py-4">وضعیت</th>
+                  <th className="px-6 py-4">زمان ثبت</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-800">
+                {projects.map((project) => (
+                  <tr key={project.id} className="hover:bg-slate-800/50 transition-colors group">
+                    <td className="px-6 py-4 text-white font-medium">{project.name}</td>
+                    <td className="px-6 py-4 text-slate-400 text-sm">{project.idea}</td>
+                    <td className="px-6 py-4 text-indigo-300 font-mono">{project.aiScore ?? 0}</td>
+                    <td className="px-6 py-4">
+                      <StatusBadge status={project.status} />
+                    </td>
+                    <td className="px-6 py-4 text-slate-500 text-sm font-mono">{project.date}</td>
+                  </tr>
+                ))}
+                {!projects.length && (
+                  <tr>
+                    <td className="px-6 py-10 text-center text-slate-500" colSpan={5}>
+                      هنوز پروژه‌ای ثبت نشده است.
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {["billing", "reports", "settings"].includes(activeMenu) && (
         <div className="flex flex-col items-center justify-center h-[50vh] text-slate-500 animate-fade-in">
           <div className="w-20 h-20 bg-slate-800 rounded-full flex items-center justify-center mb-6">
             <Settings size={32} className="opacity-50" />

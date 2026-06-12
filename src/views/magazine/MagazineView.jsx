@@ -26,12 +26,9 @@ export default function MagazineView({
       />
 
       <main className="max-w-7xl mx-auto px-6 py-12">
-        {featured && (
-          <FeaturedHero
-            article={featured}
-            onClick={() => goPost(featured.slug)}
-          />
-        )}
+        {featured ? (
+          <FeaturedHero article={featured} onClick={() => goPost(featured.slug)} />
+        ) : null}
 
         <div className="grid lg:grid-cols-12 gap-12">
           <div className="lg:col-span-8 space-y-12">

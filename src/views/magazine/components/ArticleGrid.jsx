@@ -23,11 +23,11 @@ export default function ArticleGrid({ title, onViewAll, articles, onOpen }) {
       </div>
 
       <div className="grid md:grid-cols-2 gap-8">
-        {articles.map((a) => (
+        {articles.map((article) => (
           <ArticleCard
-            key={a.slug}
-            article={a}
-            onClick={() => onOpen(a.slug)}
+            key={article.slug}
+            article={article}
+            onClick={() => onOpen(article.slug)}
           />
         ))}
       </div>

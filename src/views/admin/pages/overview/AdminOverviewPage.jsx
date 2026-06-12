@@ -1,39 +1,41 @@
 import AdminShell from "@/views/admin/shell/AdminShell";
 import OverviewSection from "@/views/admin/sections/OverviewSection";
+import { prisma } from "@/lib/prisma";
 
-export default function AdminOverviewPage() {
-  const projectsData = [
-    {
-      id: "P-101",
-      name: "فروشگاه قهوه آنلاین",
-      owner: "علی محمدی",
-      aiScore: 84,
-      status: "Completed",
-    },
-    {
-      id: "P-102",
-      name: "اپلیکیشن مدیریت مالی",
-      owner: "سارا راد",
-      aiScore: 92,
-      status: "In Progress",
-    },
-  ];
+export default async function AdminOverviewPage() {
+  const projects = prisma?.project
+    ? await prisma.project.findMany({
+        orderBy: { createdAt: "desc" },
+        include: {
+          user: { select: { name: true, phone: true } },
+        },
+        take: 8,
+      })
+    : [];
+
+  const projectsData = projects.map((p) => ({
+    id: p.id,
+    name: p.title,
+    owner: p.user?.name || p.user?.phone || "کاربر",
+    aiScore: p.aiScore || 0,
+    status: p.status || "Completed",
+  }));
 
   const serverLogs = [
     {
       time: "10:42:01",
       level: "INFO",
-      msg: "New meeting booked",
+      msg: "Projects loaded from database",
     },
     {
       time: "10:41:55",
       level: "WARN",
-      msg: "AI latency high",
+      msg: "AI queue usage is growing",
     },
     {
       time: "10:38:05",
-      level: "ERROR",
-      msg: "SMTP timeout",
+      level: "INFO",
+      msg: "Admin dashboard synced",
     },
   ];
 

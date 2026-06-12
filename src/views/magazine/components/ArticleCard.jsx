@@ -1,6 +1,7 @@
 "use client";
 
-import { Bookmark, Share2 } from "lucide-react";
+import Image from "next/image";
+import { Bookmark, Share2, Image as ImageIcon } from "lucide-react";
 
 export default function ArticleCard({ article, onClick }) {
   const hasUrl =
@@ -14,14 +15,17 @@ export default function ArticleCard({ article, onClick }) {
     >
       <div className="h-48 relative">
         {hasUrl ? (
-          <img
+          <Image
             src={article.image}
             alt={article.title}
+            fill
             className="absolute inset-0 w-full h-full object-cover"
-            loading="lazy"
+            unoptimized
           />
         ) : (
-          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900" />
+          <div className="absolute inset-0 bg-gradient-to-br from-slate-800 to-slate-900 flex items-center justify-center text-slate-500">
+            <ImageIcon size={26} />
+          </div>
         )}
 
         <div className="absolute top-4 right-4 bg-black/40 backdrop-blur-md text-white text-xs font-bold px-3 py-1 rounded-lg border border-white/10">
@@ -50,10 +54,10 @@ export default function ArticleCard({ article, onClick }) {
           </span>
 
           <div className="flex gap-3 text-slate-500">
-            <button type="button" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={(event) => event.stopPropagation()}>
               <Bookmark size={18} className="hover:text-white" />
             </button>
-            <button type="button" onClick={(e) => e.stopPropagation()}>
+            <button type="button" onClick={(event) => event.stopPropagation()}>
               <Share2 size={18} className="hover:text-white" />
             </button>
           </div>
