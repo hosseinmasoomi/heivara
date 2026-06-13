@@ -5,16 +5,9 @@ ENV NEXT_TELEMETRY_DISABLED=1
 
 FROM base AS deps
 
-ARG NPM_REGISTRY=https://mirrors.cloud.tencent.com/npm/
-
 COPY package.json package-lock.json ./
 
-RUN npm config set registry ${NPM_REGISTRY} \
-  && npm config set fetch-retries 5 \
-  && npm config set fetch-retry-mintimeout 20000 \
-  && npm config set fetch-retry-maxtimeout 120000 \
-  && npm config set timeout 600000 \
-  && npm ci --no-audit --no-fund
+RUN npm ci
 
 FROM deps AS builder
 
